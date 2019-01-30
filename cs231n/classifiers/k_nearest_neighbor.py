@@ -87,8 +87,6 @@ class KNearestNeighbor(object):
     num_train = self.X_train.shape[0]
     dists = np.zeros((num_test, num_train))
 
-    print(self.X_train.shape, X.shape)
-
     for i in range(num_test):
       #######################################################################
       # TODO:                                                               #
@@ -100,9 +98,22 @@ class KNearestNeighbor(object):
       #                         END OF YOUR CODE                            #
       #######################################################################
 
-      dists = np.sqrt(np.sum(np.square(X - self.X_train[i, :]), axis= 1))
+      # print(X[i].shape, self.X_train.shape)
 
-    print(dists.shape)
+      diff = X[i] - self.X_train
+      # print('diff', diff.shape)
+
+      square = np.square(diff)
+      # print('sqer', square.shape)
+
+      sum = np.sum(square, axis=1)
+      # print('sum ', sum.shape)
+
+      dists[i] = np.sqrt(sum)
+
+      # break
+
+      # dists[i] = np.sqrt(np.sum(np.square(X[i] - self.X_train), axis=1))
     return dists
 
   def compute_distances_no_loops(self, X):
@@ -131,6 +142,16 @@ class KNearestNeighbor(object):
     #########################################################################
     #                         END OF YOUR CODE                              #
     #########################################################################
+
+    # dists = -2 * np.dot(X, self.X_train.T) + np.sum(self.X_train ** 2, axis=1) + np.sum(X ** 2, axis=1)[:, np.newaxis]
+
+    X_square = np.sum(X ** 2, axis=1)[:, np.newaxis]
+    print('X_square', X_square.shape)
+
+    dists = -2 * np.dot(X, self.X_train.T) + np.sum(self.X_train ** 2, axis=1) + X_square
+
+    dists = np.sqrt(dists)
+    print(dists.shape)
     return dists
 
 
