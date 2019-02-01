@@ -21,6 +21,11 @@ def svm_loss_naive(W, X, y, reg):
   """
   dW = np.zeros(W.shape) # initialize the gradient as zero
 
+  # print('dW   :', dW.shape)
+
+  def add2Column(matrix, index, column):
+    matrix[:, index:index + 1] += column
+
   # compute the loss and the gradient
   num_classes = W.shape[1]
   num_train = X.shape[0]
@@ -28,12 +33,21 @@ def svm_loss_naive(W, X, y, reg):
   for i in range(num_train):
     scores = X[i].dot(W)
     correct_class_score = scores[y[i]]
+
+    indicator_f = 0
     for j in range(num_classes):
       if j == y[i]:
         continue
-      margin = scores[j] - correct_class_score + 1 # note delta = 1
+
+      margin = scores[j] - correct_class_score + 1  # note delta = 1
+
       if margin > 0:
         loss += margin
+
+        indicator_f += 1
+        add2Column(dW, j, X[i][:, None])
+
+    add2Column(dW, y[i], -(indicator_f * X[i][:, None]))
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
@@ -41,6 +55,11 @@ def svm_loss_naive(W, X, y, reg):
 
   # Add regularization to the loss.
   loss += reg * np.sum(W * W)
+
+  dW_reg = reg * 2 * W
+  dW += dW_reg
+  dW /= num_train
+
 
   #############################################################################
   # TODO:                                                                     #
@@ -50,7 +69,6 @@ def svm_loss_naive(W, X, y, reg):
   # loss is being computed. As a result you may need to modify some of the    #
   # code above to compute the gradient.                                       #
   #############################################################################
-
 
   return loss, dW
 
