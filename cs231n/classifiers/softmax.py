@@ -65,15 +65,33 @@ def softmax_loss_naive(W, X, y, reg):
   return loss, dW
 
 def softmax_loss_vectorized(W, X, y, reg):
-  """
-  Softmax loss function, vectorized version.
-
-  Inputs and outputs are the same as softmax_loss_naive.
-  """
-  # Initialize the loss and gradient to zero.
   loss = 0.0
   dW = np.zeros_like(W)
 
+  num_train = y.shape[0]
+  num_classes = W.shape[1]
+
+  train_indx = list(range(num_train))
+
+  scores = X.dot(W)
+  scores -= np.max(scores, axis=1)[:, None]
+
+  scores_e = np.exp(scores)
+  score_correct_e = scores_e[train_indx, y]
+  scores_e_sum = np.sum(scores_e, axis=1)
+
+  #print(scores_e.shape, score_correct_e.shape, scores_e_sum.shape)
+
+  loss = np.sum(-np.log(score_correct_e / scores_e_sum))
+
+  loss /= num_train
+  loss += reg * np.sum(W * W)
+
+  # grad
+
+
+  dW /= num_train
+  dW += 2 * reg * W
 
   return loss, dW
 
