@@ -20,8 +20,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/classifiers/linear_svm.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="60">
-              <caret line="4" column="38" lean-forward="true" selection-start-line="4" selection-start-column="2" selection-end-line="4" selection-end-column="38" />
+            <state relative-caret-position="835">
+              <caret line="96" column="22" lean-forward="true" selection-start-line="96" selection-start-column="22" selection-end-line="96" selection-end-column="22" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -32,8 +32,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/classifiers/softmax.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="535">
-              <caret line="65" lean-forward="true" selection-start-line="65" selection-end-line="65" />
+            <state relative-caret-position="400">
+              <caret line="59" lean-forward="true" selection-start-line="59" selection-end-line="59" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -51,6 +51,11 @@
       <find>num_train</find>
       <find>xrange</find>
       <find>dw</find>
+      <find>score_correct_e</find>
+      <find>train_indx</find>
+      <find>scores_e_sum * X[i]</find>
+      <find>scores_e[j]</find>
+      <find>scores_e_sum</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -169,18 +174,27 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/classifiers/linear_svm.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="4" column="38" lean-forward="true" selection-start-line="4" selection-start-column="2" selection-end-line="4" selection-end-column="38" />
+        <state relative-caret-position="835">
+          <caret line="96" column="22" lean-forward="true" selection-start-line="96" selection-start-column="22" selection-end-line="96" selection-end-column="22" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/classifiers/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <folding>
+            <element signature="e#0#51#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/classifiers/softmax.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="535">
-          <caret line="65" lean-forward="true" selection-start-line="65" selection-end-line="65" />
+        <state relative-caret-position="400">
+          <caret line="59" lean-forward="true" selection-start-line="59" selection-end-line="59" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
