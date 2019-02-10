@@ -178,8 +178,10 @@ class TwoLayerNet(object):
     val_acc_history = []
 
     for it in range(num_iters):
-      X_batch = None
-      y_batch = None
+      batch_ids = np.random.choice(X.shape[0], batch_size)
+
+      X_batch = X[batch_ids]
+      y_batch = y[batch_ids]
 
       #########################################################################
       # TODO: Create a random minibatch of training data and labels, storing  #
@@ -204,6 +206,12 @@ class TwoLayerNet(object):
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
+
+      self.params['W2'] += -learning_rate * grads['W2']
+      self.params['b2'] += -learning_rate * grads['b2']
+
+      self.params['W1'] += -learning_rate * grads['W1']
+      self.params['b1'] += -learning_rate * grads['b1']
 
       if verbose and it % 100 == 0:
         print('iteration %d / %d: loss %f' % (it, num_iters, loss))
@@ -249,6 +257,12 @@ class TwoLayerNet(object):
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
+
+    H = X.dot(self.params['W1']) + self.params['b1']
+    H = np.maximum(H, 0)
+    scores = H.dot(self.params['W2']) + self.params['b2']
+
+    y_pred = np.argmax(scores, axis=1)
 
     return y_pred
 
