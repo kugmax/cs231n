@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
+from .softmax import softmax_loss_vectorized, softmax_loss_naive
 
 class TwoLayerNet(object):
   """
@@ -79,7 +80,11 @@ class TwoLayerNet(object):
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
-    
+
+    H = X.dot(W1) + b1
+    H = np.maximum(H, 0)
+    scores = H.dot(W2) + b2
+
     # If the targets are not given then jump out, we're done
     if y is None:
       return scores
@@ -97,6 +102,20 @@ class TwoLayerNet(object):
     #                              END OF YOUR CODE                             #
     #############################################################################
 
+    num_train = X.shape[0]
+    train_indx = list(range(num_train))
+
+    scores -= np.max(scores, axis=1)[:, None]
+
+    scores_e = np.exp(scores)
+    score_correct_e = scores_e[train_indx, y]
+    scores_e_sum = np.sum(scores_e, axis=1)
+
+    loss = np.sum(-np.log(score_correct_e / scores_e_sum))
+
+    loss /= num_train
+    loss += reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
+
     # Backward pass: compute gradients
     grads = {}
     #############################################################################
@@ -108,6 +127,24 @@ class TwoLayerNet(object):
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
+
+    s = np.divide(scores_e, scores_e_sum[:, None])
+    s[train_indx, y] = - (scores_e_sum - score_correct_e) / scores_e_sum
+    s /= num_train
+
+    dW2 = H.T.dot(s)
+    db2 = np.sum(s, axis=0)
+    hidden = s.dot(W2.T)
+    hidden[H == 0] = 0
+
+    dW1 = X.T.dot(hidden)
+    db1 = np.sum(hidden, axis=0)
+
+    grads['W2'] = dW2 + 2 * reg * W2
+    grads['b2'] = db2
+
+    grads['W1'] = dW1 + 2 * reg * W1
+    grads['b1'] = db1
 
     return loss, grads
 
@@ -141,8 +178,10 @@ class TwoLayerNet(object):
     val_acc_history = []
 
     for it in range(num_iters):
-      X_batch = None
-      y_batch = None
+      batch_ids = np.random.choice(X.shape[0], batch_size)
+
+      X_batch = X[batch_ids]
+      y_batch = y[batch_ids]
 
       #########################################################################
       # TODO: Create a random minibatch of training data and labels, storing  #
@@ -167,6 +206,12 @@ class TwoLayerNet(object):
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
+
+      self.params['W2'] += -learning_rate * grads['W2']
+      self.params['b2'] += -learning_rate * grads['b2']
+
+      self.params['W1'] += -learning_rate * grads['W1']
+      self.params['b1'] += -learning_rate * grads['b1']
 
       if verbose and it % 100 == 0:
         print('iteration %d / %d: loss %f' % (it, num_iters, loss))
@@ -212,6 +257,12 @@ class TwoLayerNet(object):
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
+
+    H = X.dot(self.params['W1']) + self.params['b1']
+    H = np.maximum(H, 0)
+    scores = H.dot(self.params['W2']) + self.params['b2']
+
+    y_pred = np.argmax(scores, axis=1)
 
     return y_pred
 
