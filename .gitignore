@@ -2,3 +2,5 @@
 *.pyc
 .env/*
 .idea/
+*.so
+*/.ipynb_checkpoints/
