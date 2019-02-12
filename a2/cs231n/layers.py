@@ -2,6 +2,9 @@ from builtins import range
 import numpy as np
 
 
+def reshape_x(x):
+    return x.reshape(x.shape[0], np.prod(x.shape[1:]))
+
 def affine_forward(x, w, b):
     """
     Computes the forward pass for an affine (fully-connected) layer.
@@ -30,6 +33,12 @@ def affine_forward(x, w, b):
     #                             END OF YOUR CODE                            #
     ###########################################################################
     cache = (x, w, b)
+
+    x = reshape_x(x)
+
+    q = x.dot(w)
+    f = q + b
+    out = f
     return out, cache
 
 
@@ -58,6 +67,27 @@ def affine_backward(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+    # print(x.shape, w.shape, b.shape)
+
+    df_db = np.sum(dout,axis=0)
+    df_dq = dout
+
+    dq_dx = w
+    dq_dw = reshape_x(x)
+
+    df_dx = dq_dx.dot(df_dq.T)
+    df_dw = dq_dw.T.dot(df_dq)
+
+    dx = df_dx
+    dw = df_dw
+    db = df_db
+
+
+    dx = dx.T
+    dx = dx.reshape(x.shape)
+
+    # print(dx.shape, dw.shape, db.shape)
+
     return dx, dw, db
 
 
