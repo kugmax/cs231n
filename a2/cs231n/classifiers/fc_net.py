@@ -53,10 +53,10 @@ class TwoLayerNet(object):
         ############################################################################
 
         self.params['W1'] = np.random.normal(0, weight_scale, (input_dim, hidden_dim))
-        self.params['b1'] = np.zeros((input_dim, 1))
+        self.params['b1'] = np.zeros(hidden_dim)
 
         self.params['W2'] = np.random.normal(0, weight_scale, (hidden_dim, num_classes))
-        self.params['b2'] = np.zeros((input_dim, 1))
+        self.params['b2'] = np.zeros(num_classes)
 
     def loss(self, X, y=None):
         """
@@ -82,7 +82,6 @@ class TwoLayerNet(object):
         W2, b2 = self.params['W2'], self.params['b2']
 
         reg = self.reg
-        N, D = X.shape
 
         ############################################################################
         # TODO: Implement the forward pass for the two-layer net, computing the    #
@@ -93,29 +92,14 @@ class TwoLayerNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
-        H, cache = affine_relu_forward(X, W1, b1)
-        scores, cache = affine_forward(H, W2, b2)
+        H, cache1 = affine_relu_forward(X, W1, b1)
+        scores, cache2 = affine_forward(H, W2, b2)
 
         # If y is None then we are in test mode so just return scores
         if y is None:
             return scores
 
         factor = 0.5
-
-        num_train = X.shape[0]
-        train_indx = list(range(num_train))
-
-        scores -= np.max(scores, axis=1)[:, None]
-
-        scores_e = np.exp(scores)
-        score_correct_e = scores_e[train_indx, y]
-        scores_e_sum = np.sum(scores_e, axis=1)
-
-        loss = np.sum(-np.log(score_correct_e / scores_e_sum))
-
-        loss /= num_train
-        loss += factor * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
-
 
         ############################################################################
         # TODO: Implement the backward pass for the two-layer net. Store the loss  #
@@ -133,23 +117,15 @@ class TwoLayerNet(object):
         ############################################################################
         grads = {}
 
-        s = np.divide(scores_e, scores_e_sum[:, None])
-        s[train_indx, y] = - (scores_e_sum - score_correct_e) / scores_e_sum
-        s /= num_train
+        loss, dout = softmax_loss(scores, y)
+        loss += factor * reg * (np.sum(self.params['W1'] ** 2))
+        loss += factor * reg * (np.sum(self.params['W2'] ** 2))
 
-        dW2 = H.T.dot(s)
-        db2 = np.sum(s, axis=0)
-        hidden = s.dot(W2.T)
-        hidden[H == 0] = 0
+        dout, grads['W2'], grads['b2'] = affine_backward(dout, cache2)
+        _, grads['W1'], grads['b1'] = affine_relu_backward(dout, cache1)
 
-        dW1 = X.T.dot(hidden)
-        db1 = np.sum(hidden, axis=0)
-
-        grads['W2'] = dW2 + 2 * reg * W2
-        grads['b2'] = db2
-
-        grads['W1'] = dW1 + 2 * reg * W1
-        grads['b1'] = db1
+        grads['W2'] += reg * self.params['W2']
+        grads['W1'] += reg * self.params['W1']
 
         return loss, grads
 

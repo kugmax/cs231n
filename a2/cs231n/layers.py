@@ -86,8 +86,6 @@ def affine_backward(dout, cache):
     dx = dx.T
     dx = dx.reshape(x.shape)
 
-    # print(dx.shape, dw.shape, db.shape)
-
     return dx, dw, db
 
 
@@ -138,7 +136,7 @@ def relu_backward(dout, cache):
     ###########################################################################
 
     dx = dout
-    dx[x < 0] = 0
+    dx[x <= 0] = 0
 
     return dx
 
