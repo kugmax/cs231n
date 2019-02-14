@@ -278,15 +278,12 @@ class FullyConnectedNet(object):
             h, fc_cache = affine_forward(x, w, b)
             x, relu_cache = relu_forward(h)
 
-            layers_caches.append(
-                {
-                    'h1_' + layer_id_str: h,
-                    'cache1_' + layer_id_str: fc_cache,
+            layer_cache = {'cache1_' + layer_id_str: fc_cache, 'cache2_' + layer_id_str: relu_cache}
+            if self.use_dropout:
+                x, dropout_cache = dropout_forward(x, self.dropout_param)
+                layer_cache['cache3_' + layer_id_str] = dropout_cache
 
-                    'h2_' + layer_id_str: x,
-                    'cache2_' + layer_id_str: relu_cache,
-                }
-            )
+            layers_caches.append(layer_cache)
 
         last_layer_id_str = str(self.num_layers)
         scores, last_cache = affine_forward(x, self.params['W' + last_layer_id_str], self.params['b' + last_layer_id_str])
@@ -328,6 +325,9 @@ class FullyConnectedNet(object):
         for layer_id in reversed(range(self.num_layers - 1)):
             layer_id_str = str(layer_id + 1)
             cache = layers_caches[layer_id]
+
+            if self.use_dropout:
+                dout = dropout_backward(dout, cache['cache3_' + layer_id_str])
 
             dout = relu_backward(dout, cache['cache2_' + layer_id_str])
             dout, grads_w, grads['b' + layer_id_str] = affine_backward(dout, cache['cache1_' + layer_id_str])
