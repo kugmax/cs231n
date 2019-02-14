@@ -314,22 +314,24 @@ class FullyConnectedNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
-        factor = 0.5
+        l2reg = 0
         loss, dout = softmax_loss(scores, y)
         for layer_id in range(self.num_layers):
             layer_id_str = str(layer_id + 1)
-            loss += factor * self.reg * (np.sum(self.params['W' + layer_id_str] ** 2))
+            l2reg += np.sum(self.params['W' + layer_id_str] ** 2)
+
+        l2reg *= 0.5 * self.reg
+        loss += l2reg
 
         dout, grads['W' + last_layer_id_str], grads['b' + last_layer_id_str] = affine_backward(dout, last_cache)
         grads['W' + last_layer_id_str] += self.reg * self.params['W' + last_layer_id_str]
         for layer_id in reversed(range(self.num_layers - 1)):
             layer_id_str = str(layer_id + 1)
-
             cache = layers_caches[layer_id]
 
             dout = relu_backward(dout, cache['cache2_' + layer_id_str])
-            dout, grads['W' + layer_id_str], grads['b' + layer_id_str] = affine_backward(dout, cache['cache1_' + layer_id_str])
+            dout, grads_w, grads['b' + layer_id_str] = affine_backward(dout, cache['cache1_' + layer_id_str])
 
-            grads['W' + layer_id_str] += self.reg * self.params['W' + layer_id_str]
+            grads['W' + layer_id_str] = grads_w + self.reg * self.params['W' + layer_id_str]
 
         return loss, grads
