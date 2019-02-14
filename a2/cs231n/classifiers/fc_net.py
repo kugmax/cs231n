@@ -194,6 +194,20 @@ class FullyConnectedNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
+        layer_input_dim = input_dim
+        layer_id = 1
+        for hidden_dim in hidden_dims:
+            layer_str = str(layer_id)
+
+            self.params['W' + layer_str] = np.random.normal(0, weight_scale, (layer_input_dim, hidden_dim))
+            self.params['b' + layer_str] = np.zeros(hidden_dim)
+
+            layer_input_dim = hidden_dim
+            layer_id += 1
+
+        self.params['W' + str(layer_id)] = np.random.normal(0, weight_scale, (layer_input_dim, num_classes))
+        self.params['b' + str(layer_id)] = np.zeros(num_classes)
+
         # When using dropout we need to pass a dropout_param dictionary to each
         # dropout layer so that the layer knows the dropout probability and the mode
         # (train / test). You can pass the same dropout_param to each dropout layer.
@@ -253,6 +267,30 @@ class FullyConnectedNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
+        layers_caches = []
+        x = X
+        for layer_id in range(self.num_layers - 1):
+            layer_id_str = str(layer_id + 1)
+
+            w = self.params['W' + layer_id_str]
+            b = self.params['b' + layer_id_str]
+
+            h, fc_cache = affine_forward(x, w, b)
+            x, relu_cache = relu_forward(h)
+
+            layers_caches.append(
+                {
+                    'h1_' + layer_id_str: h,
+                    'cache1_' + layer_id_str: fc_cache,
+
+                    'h2_' + layer_id_str: x,
+                    'cache2_' + layer_id_str: relu_cache,
+                }
+            )
+
+        last_layer_id_str = str(self.num_layers)
+        scores, last_cache = affine_forward(x, self.params['W' + last_layer_id_str], self.params['b' + last_layer_id_str])
+
         # If test mode return early
         if mode == 'test':
             return scores
@@ -275,5 +313,23 @@ class FullyConnectedNet(object):
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
+
+        factor = 0.5
+        loss, dout = softmax_loss(scores, y)
+        for layer_id in range(self.num_layers):
+            layer_id_str = str(layer_id + 1)
+            loss += factor * self.reg * (np.sum(self.params['W' + layer_id_str] ** 2))
+
+        dout, grads['W' + last_layer_id_str], grads['b' + last_layer_id_str] = affine_backward(dout, last_cache)
+        grads['W' + last_layer_id_str] += self.reg * self.params['W' + last_layer_id_str]
+        for layer_id in reversed(range(self.num_layers - 1)):
+            layer_id_str = str(layer_id + 1)
+
+            cache = layers_caches[layer_id]
+
+            dout = relu_backward(dout, cache['cache2_' + layer_id_str])
+            dout, grads['W' + layer_id_str], grads['b' + layer_id_str] = affine_backward(dout, cache['cache1_' + layer_id_str])
+
+            grads['W' + layer_id_str] += self.reg * self.params['W' + layer_id_str]
 
         return loss, grads
