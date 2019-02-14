@@ -69,7 +69,12 @@ def sgd_momentum(w, dw, config=None):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    v = config['momentum'] * v - config['learning_rate'] * dw
+
     config['velocity'] = v
+
+    next_w = w + v
 
     return next_w, config
 
@@ -103,6 +108,9 @@ def rmsprop(w, dw, config=None):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    config['cache'] = config['decay_rate'] * config['cache'] + (1 - config['decay_rate']) * dw**2
+    next_w = w - config['learning_rate'] * dw / (np.sqrt(config['cache']) + config['epsilon'] )
 
     return next_w, config
 
@@ -143,5 +151,15 @@ def adam(w, dw, config=None):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    config['t'] += 1
+
+    config['m'] = config['beta1'] * config['m'] + (1 - config['beta1']) * dw
+    config['v'] = config['beta2'] * config['v'] + (1 - config['beta2']) * (dw ** 2)
+    # next_w = w - config['learning_rate'] * config['m'] / (np.sqrt(config['v']) + config['epsilon'])
+
+    mt = config['m'] / (1 - config['beta1'])
+    vt = config['v'] / (1 - config['beta2'])
+    next_w = w - config['learning_rate'] * mt / (np.sqrt(vt) + config['epsilon'])
 
     return next_w, config
