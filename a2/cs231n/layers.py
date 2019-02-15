@@ -218,11 +218,16 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         sample_mean = np.mean(x, axis=0)
         sample_var = np.var(x, axis=0)
 
-        out = (x - sample_mean) / np.sqrt(sample_var + eps)
-        out = out * gamma + beta
+        denominator = np.sqrt(sample_var + eps)
+
+        x_norm = (x - sample_mean) / denominator
+        out = x_norm * gamma + beta
 
         running_mean = momentum * running_mean + (1 - momentum) * sample_mean
         running_var = momentum * running_var + (1 - momentum) * sample_var
+
+        # cache = (x, gamma, x_norm, sample_mean, sample_var, denominator)
+        cache = (x, gamma, x_norm, sample_mean, sample_var, eps)
 
     elif mode == 'test':
         #######################################################################
@@ -236,8 +241,10 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #                          END OF YOUR CODE                           #
         #######################################################################
 
-        out = (x - running_mean) / np.sqrt(running_var + eps)
-        out = out * gamma + beta
+        denominator = np.sqrt(running_var + eps)
+
+        x_norm = (x - running_mean) / denominator
+        out = x_norm * gamma + beta
     else:
         raise ValueError('Invalid forward batchnorm mode "%s"' % mode)
 
@@ -276,6 +283,37 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    # x, gamma, x_norm, sample_mean, sample_var, denominator = cache
+    x, gamma, x_norm, sample_mean, sample_var, eps = cache
+    N, D = x.shape
+
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(dout * x_norm, axis=0)
+
+    # dout *= gamma
+    #
+    # d_denomenator = dout * (-1 / denominator ** 2)
+    # d_denomenator *= 0.5 * (1 / denominator)
+    # d_denomenator = 1 / N * np.ones((N, D)) * d_denomenator
+    # d_denomenator *= 2 * sample_mean
+    #
+    # d_mean = -1 * np.sum(dout + d_denomenator, axis=0)
+    # dx = dout * d_denomenator
+    # dx2 = 1 / N * np.ones((N, D)) * d_mean
+    #
+    # dx *= dx2
+
+    dx_hat = dout * gamma
+    dxmu1 = dx_hat * 1 / np.sqrt(sample_var + eps)
+    divar = np.sum(dx_hat * (x - sample_mean), axis=0)
+    dvar = divar * -1 / 2 * (sample_var + eps) ** (-3 / 2)
+    dsq = 1 / N * np.ones((N, D)) * dvar
+    dxmu2 = 2 * (x - sample_mean) * dsq
+    dx1 = dxmu1 + dxmu2
+    dmu = -1 * np.sum(dxmu1 + dxmu2, axis=0)
+    dx2 = 1 / N * np.ones((N, D)) * dmu
+    dx = dx1 + dx2
 
     return dx, dgamma, dbeta
 
