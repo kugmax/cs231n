@@ -408,6 +408,22 @@ def layernorm_forward(x, gamma, beta, ln_param):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    x = x.T
+
+    sample_mean = np.mean(x, axis=0)
+    sample_var = np.var(x, axis=0)
+
+    denominator = 1.0 / np.sqrt(sample_var + eps)
+    nominator = (x - sample_mean)
+
+    x_norm = nominator * denominator
+
+    x_norm = x_norm.T
+
+    out = gamma * x_norm + beta
+    cache = (gamma, x_norm, sample_mean, denominator, eps)
+
     return out, cache
 
 
@@ -439,6 +455,26 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    gamma, x_norm, sample_mean, sample_var, eps = cache
+
+    N, D = x_norm.shape
+
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(x_norm * dout, axis=0)
+
+    dx_norm = dout * gamma
+
+    dx_norm = dx_norm.T
+    x_norm = x_norm.T
+
+    dx = (1.0 / D) * sample_var * (
+            D * dx_norm - np.sum(dx_norm, axis=0)
+            - x_norm * np.sum(dx_norm * x_norm, axis=0)
+    )
+
+    dx = dx.T
+
     return dx, dgamma, dbeta
 
 

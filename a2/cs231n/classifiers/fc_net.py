@@ -290,6 +290,13 @@ class FullyConnectedNet(object):
                 x, batch_cache = batchnorm_forward(x, gamma, betta, self.bn_params[layer_id])
                 layer_cache['cache_norm_' + layer_id_str] = batch_cache
 
+            elif self.normalization == 'layernorm':
+                gamma = self.params['gamma' + layer_id_str]
+                betta = self.params['beta' + layer_id_str]
+
+                x, batch_cache = layernorm_forward(x, gamma, betta, self.bn_params[layer_id])
+                layer_cache['cache_norm_' + layer_id_str] = batch_cache
+
             x, relu_cache = relu_forward(x)
             layer_cache['cache_relu_' + layer_id_str] = relu_cache
             if self.use_dropout:
@@ -346,6 +353,10 @@ class FullyConnectedNet(object):
 
             if self.normalization == 'batchnorm':
                 dout, grads['gamma' + layer_id_str], grads['beta' + layer_id_str] = batchnorm_backward(dout, cache['cache_norm_' + layer_id_str])
+
+            elif self.normalization == 'layernorm':
+                dout, grads['gamma' + layer_id_str], grads['beta' + layer_id_str] = layernorm_backward(dout, cache[
+                    'cache_norm_' + layer_id_str])
 
             dout, grads_w, grads['b' + layer_id_str] = affine_backward(dout, cache['cache_w_' + layer_id_str])
 
