@@ -202,6 +202,10 @@ class FullyConnectedNet(object):
             self.params['W' + layer_str] = np.random.normal(0, weight_scale, (layer_input_dim, hidden_dim))
             self.params['b' + layer_str] = np.zeros(hidden_dim)
 
+            if self.normalization != None:
+                self.params['gamma' + layer_str] = np.ones(hidden_dim)
+                self.params['beta' + layer_str] = np.zeros(hidden_dim)
+
             layer_input_dim = hidden_dim
             layer_id += 1
 
@@ -271,17 +275,26 @@ class FullyConnectedNet(object):
         x = X
         for layer_id in range(self.num_layers - 1):
             layer_id_str = str(layer_id + 1)
+            layer_cache = {}
 
             w = self.params['W' + layer_id_str]
             b = self.params['b' + layer_id_str]
 
-            h, fc_cache = affine_forward(x, w, b)
-            x, relu_cache = relu_forward(h)
+            x, fc_cache = affine_forward(x, w, b)
+            layer_cache['cache_w_' + layer_id_str] = fc_cache
 
-            layer_cache = {'cache1_' + layer_id_str: fc_cache, 'cache2_' + layer_id_str: relu_cache}
+            if self.normalization == 'batchnorm':
+                gamma = self.params['gamma' + layer_id_str]
+                betta = self.params['beta' + layer_id_str]
+
+                x, batch_cache = batchnorm_forward(x, gamma, betta, self.bn_params[layer_id])
+                layer_cache['cache_norm_' + layer_id_str] = batch_cache
+
+            x, relu_cache = relu_forward(x)
+            layer_cache['cache_relu_' + layer_id_str] = relu_cache
             if self.use_dropout:
                 x, dropout_cache = dropout_forward(x, self.dropout_param)
-                layer_cache['cache3_' + layer_id_str] = dropout_cache
+                layer_cache['cache_drop_' + layer_id_str] = dropout_cache
 
             layers_caches.append(layer_cache)
 
@@ -327,10 +340,14 @@ class FullyConnectedNet(object):
             cache = layers_caches[layer_id]
 
             if self.use_dropout:
-                dout = dropout_backward(dout, cache['cache3_' + layer_id_str])
+                dout = dropout_backward(dout, cache['cache_drop_' + layer_id_str])
 
-            dout = relu_backward(dout, cache['cache2_' + layer_id_str])
-            dout, grads_w, grads['b' + layer_id_str] = affine_backward(dout, cache['cache1_' + layer_id_str])
+            dout = relu_backward(dout, cache['cache_relu_' + layer_id_str])
+
+            if self.normalization == 'batchnorm':
+                dout, grads['gamma' + layer_id_str], grads['beta' + layer_id_str] = batchnorm_backward(dout, cache['cache_norm_' + layer_id_str])
+
+            dout, grads_w, grads['b' + layer_id_str] = affine_backward(dout, cache['cache_w_' + layer_id_str])
 
             grads['W' + layer_id_str] = grads_w + self.reg * self.params['W' + layer_id_str]
 
