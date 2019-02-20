@@ -940,6 +940,22 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    N, C, H, W = x.shape
+
+    x = x.reshape([N, G, C // G, H, W])
+
+    mean = np.mean(x, axis=(2, 3, 4), keepdims=True)
+    var = np.var(x, axis=(2, 3, 4), keepdims=True)
+
+    x = (x - mean) / np.sqrt(var + eps)
+
+    x = x.reshape([N, C, H, W])
+
+    out = x * gamma + beta
+
+    cache = (gamma, x, mean, var, eps)
+
     return out, cache
 
 
@@ -966,6 +982,28 @@ def spatial_groupnorm_backward(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    # gamma, x_norm, mean, var, eps = cache
+    #
+    # print(x_norm.shape)
+    #
+    # N, C, H, W = x_norm.shape
+    #
+    # dbeta = np.sum(dout, axis=0)
+    # dgamma = np.sum(x_norm * dout, axis=0)
+    #
+    # dx_norm = dout * gamma
+    #
+    # dx_norm = dx_norm.T
+    # x_norm = x_norm.T
+    #
+    # dx = (1.0 / D) * var * (
+    #         D * dx_norm - np.sum(dx_norm, axis=0)
+    #         - x_norm * np.sum(dx_norm * x_norm, axis=0)
+    # )
+    #
+    # dx = dx.T
+
     return dx, dgamma, dbeta
 
 
