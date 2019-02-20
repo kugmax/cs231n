@@ -58,6 +58,40 @@ class ThreeLayerConvNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
+        # stride = 1
+        # pad = (filter_size - 1) // 2
+        #
+        # conv_H = int(1 + (input_dim[2] + 2 * pad - filter_size) / stride)
+        # conv_dim = np.prod((input_dim[0], conv_H, conv_H))
+        #
+        # pool_height = 2
+        # pool_stride = 2
+        #
+        # pool_dim = int(1 + (conv_H - pool_height) / pool_stride)
+        #
+        # conv_input_dim = np.prod(input_dim)
+        #
+        # self.params['W1'] = np.random.normal(0, weight_scale, (conv_input_dim, conv_dim))
+        # self.params['b1'] = np.zeros(conv_dim)
+        #
+        # self.params['W2'] = np.random.normal(0, weight_scale, (pool_dim, hidden_dim))
+        # self.params['b2'] = np.zeros(hidden_dim)
+        #
+        # self.params['W3'] = np.random.normal(0, weight_scale, (hidden_dim, num_classes))
+        # self.params['b3'] = np.zeros(num_classes)
+
+
+        C, H, W = input_dim
+
+        self.params['W1'] = weight_scale * np.random.randn(num_filters, C, filter_size, filter_size)
+        self.params['b1'] = np.zeros(num_filters)
+
+        self.params['W2'] = weight_scale * np.random.randn(num_filters * H * W // 4, hidden_dim)
+        self.params['b2'] = np.zeros(hidden_dim)
+
+        self.params['W3'] = weight_scale * np.random.randn(hidden_dim, num_classes)
+        self.params['b3'] = np.zeros(num_classes)
+
         for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
 
@@ -94,6 +128,14 @@ class ThreeLayerConvNet(object):
         #                             END OF YOUR CODE                             #
         ############################################################################
 
+        x, cache_conv = conv_forward_fast(X, W1, b1, conv_param)
+        x, cache_relu = relu_forward(x)
+        x, cache_pool = max_pool_forward_fast(x, pool_param)
+
+        x, cache_affine1 = affine_forward(x, W2, b2)
+        x, cache_relu1 = relu_forward(x)
+        scores, cache_affine2 = affine_forward(x, W3, b3)
+
         if y is None:
             return scores
 
@@ -112,5 +154,20 @@ class ThreeLayerConvNet(object):
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
+
+        factor = 0.5
+
+        loss, dout = softmax_loss(scores, y)
+        loss += factor * self.reg * (np.sum(self.params['W1'] ** 2))
+        loss += factor * self.reg * (np.sum(self.params['W2'] ** 2))
+        loss += factor * self.reg * (np.sum(self.params['W3'] ** 2))
+
+        dout, grads['W3'], grads['b3'] = affine_backward(dout, cache_affine2)
+        dout = relu_backward(dout, cache_relu1)
+        dout, grads['W2'], grads['b2'] = affine_backward(dout, cache_affine1)
+
+        dout = max_pool_backward_fast(dout, cache_pool)
+        dout = relu_backward(dout, cache_relu)
+        dout, grads['W1'], grads['b1'] = conv_backward_fast(dout, cache_conv)
 
         return loss, grads
