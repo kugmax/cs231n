@@ -660,6 +660,41 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+    x, w, b, conv_param = cache
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+
+    print(dout.shape, x.shape, w.shape)
+
+    stride = conv_param.get('stride', 1)
+    pad = conv_param.get('pad', 0)
+
+    H_new = int(1 + (H + 2 * pad - HH) / stride)
+    W_new = int(1 + (W + 2 * pad - WW) / stride)
+
+    xp = np.zeros((N, C, H + 2, W + 2))
+    xp[:, :, 1:H + 1, 1:W + 1] = x
+
+    dx_p = np.zeros(xp.shape)
+
+    dw = np.zeros(w.shape)
+    db = np.zeros(b.shape)
+
+    for n in range(N):
+        for f in range(F):
+            row = 0
+            db[f] += dout[n, f].sum()
+            for i in range(0, H_new):
+                column = 0
+                for j in range(0, W_new):
+                    dw[f] += xp[n, :, row:row + HH, column:column + WW] * dout[n, f, i, j]
+                    dx_p[n, :, row:row + HH, column:column + WW] += w[f] * dout[n, f, i, j]
+
+                    column += stride
+                row += stride
+
+    dx = dx_p[:, :, pad:pad + H, pad:pad + W]
     return dx, dw, db
 
 
