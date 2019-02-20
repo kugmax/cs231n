@@ -604,6 +604,37 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    N, C, H, W = x.shape
+    F, C, HH, WW = w.shape
+
+    stride = conv_param.get('stride', 1)
+    pad = conv_param.get('pad', 0)
+
+    H_new = int(1 + (H + 2 * pad - HH) / stride)
+    W_new = int(1 + (W + 2 * pad - WW) / stride)
+
+    xm = np.zeros((N, C, H+2, W+2))
+    xm[:, :, 1:H+1, 1:W+1] = x
+
+    out = np.zeros((N, F, H_new, W_new))
+    for n in range(N):
+        for f in range(F):
+            row = 0
+            for i in range(0, H_new):
+                column = 0
+                for j in range(0, W_new):
+                    xm_f = xm[n, :, row:row + HH, column:column + WW]
+                    xm_f = xm_f * w[f]
+
+                    sum_c = np.sum(xm_f, axis=(1, 2))
+                    sum_c += b[f]
+
+                    out[n, f, i, j] = xm_f.sum() + b[f]
+
+                    column += stride
+                row += stride
+
     cache = (x, w, b, conv_param)
     return out, cache
 
