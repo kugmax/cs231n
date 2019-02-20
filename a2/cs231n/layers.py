@@ -948,13 +948,15 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     mean = np.mean(x, axis=(2, 3, 4), keepdims=True)
     var = np.var(x, axis=(2, 3, 4), keepdims=True)
 
-    x = (x - mean) / np.sqrt(var + eps)
+    ivar = 1 / np.sqrt(var + eps)
+
+    x = (x - mean) * ivar
 
     x = x.reshape([N, C, H, W])
 
     out = x * gamma + beta
 
-    cache = (gamma, x, mean, var, eps)
+    cache = (x, gamma, ivar, eps, G)
 
     return out, cache
 
@@ -983,26 +985,32 @@ def spatial_groupnorm_backward(dout, cache):
     #                             END OF YOUR CODE                            #
     ###########################################################################
 
-    # gamma, x_norm, mean, var, eps = cache
-    #
-    # print(x_norm.shape)
-    #
-    # N, C, H, W = x_norm.shape
-    #
-    # dbeta = np.sum(dout, axis=0)
-    # dgamma = np.sum(x_norm * dout, axis=0)
-    #
-    # dx_norm = dout * gamma
-    #
-    # dx_norm = dx_norm.T
-    # x_norm = x_norm.T
-    #
-    # dx = (1.0 / D) * var * (
-    #         D * dx_norm - np.sum(dx_norm, axis=0)
-    #         - x_norm * np.sum(dx_norm * x_norm, axis=0)
-    # )
-    #
-    # dx = dx.T
+    N, C, H, W = dout.shape
+
+    xhat, gamma, ivar, eps, G = cache
+
+    dxhat = dout * gamma[np.newaxis, :, np.newaxis, np.newaxis]
+
+    dbeta = np.sum(dout, axis=(0, 2, 3), keepdims=True)
+    dgamma = np.sum(dout * xhat, axis=(0, 2, 3), keepdims=True)
+
+    dxhat = np.reshape(dxhat, (N * G, C // G * H * W)).T
+    xhat = np.reshape(xhat, (N * G, C // G * H * W)).T
+
+    # print(dxhat.shape)
+    # print(dxhat2.shape)
+
+    # dxhat = dxhat.reshape([N, G, C // G, H, W])
+    # xhat = xhat.reshape([N, G, C // G, H, W])
+
+    # print(dxhat.shape)
+
+    Nprime, Dprime = dxhat.shape
+
+    dx = 1.0 / Nprime * ivar * (Nprime * dxhat - np.sum(dxhat, axis=0) - xhat * np.sum(dxhat * xhat, axis=0))
+
+    dx = np.reshape(dx.T, (N, C, H, W))
+    # dx = dx.reshape([N, C, H, W])
 
     return dx, dgamma, dbeta
 
