@@ -771,8 +771,6 @@ def max_pool_backward_naive(dout, cache):
     #                             END OF YOUR CODE                            #
     ###########################################################################
 
-    print(dout.shape)
-
     x, pool_param = cache
     N, C, H, W = x.shape
 
@@ -837,6 +835,25 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     #                             END OF YOUR CODE                            #
     ###########################################################################
 
+    N, C, H, W = x.shape
+
+    xr = x.reshape(N, C, H * W)
+    out = np.zeros(xr.shape)
+
+    cache = []
+
+    for c in range(C):
+        batch_per_channel = xr[:, c]
+        out[:, c], cache_per_channel = batchnorm_forward(batch_per_channel, gamma[c], beta[c], bn_param)
+
+        cache.append(cache_per_channel)
+
+    out = out.reshape(N, C, H, W)
+
+    # x = np.swapaxes(x, 0, 1)
+    # out, cache = batchnorm_forward(x.reshape(C, N * H * W).T, gamma, beta, bn_param)
+    # out = out.T.reshape(C, N, H, W).swapaxes(0, 1)
+
     return out, cache
 
 
@@ -866,6 +883,27 @@ def spatial_batchnorm_backward(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    N, C, H, W = dout.shape
+
+    dout_r = dout.reshape(N, C, H * W)
+
+    dx = np.zeros(dout_r.shape)
+    dgamma = np.zeros(C)
+    dbeta = np.zeros(C)
+
+    for c in range(C):
+        dout_per_channel = dout_r[:, c]
+
+        dx[:, c], dg, db = batchnorm_backward(dout_per_channel, cache[c])
+
+        dgamma[c] = np.sum(dg)
+        dbeta[c] = np.sum(db)
+
+    dx = dx.reshape(N, C, H, W)
+
+    # dx, dgamma, dbeta = batchnorm_backward(dout.swapaxes(0, 1).reshape(C, -1).T, cache)
+    # dx = dx.T.reshape(C, N, H, W).swapaxes(0, 1)
 
     return dx, dgamma, dbeta
 
