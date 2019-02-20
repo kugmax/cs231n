@@ -770,6 +770,34 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
+
+    print(dout.shape)
+
+    x, pool_param = cache
+    N, C, H, W = x.shape
+
+    HH = pool_param['pool_height']
+    WW = pool_param['pool_width']
+    stride = pool_param['stride']
+
+    H_new = int(1 + (H - HH) / stride)
+    W_new = int(1 + (W - WW) / stride)
+
+    dx = np.zeros(x.shape)
+    for n in range(N):
+        for c in range(C):
+            row = 0
+            for i in range(0, H_new):
+                column = 0
+                for j in range(0, W_new):
+                    window = x[n, c, row:row + HH, column:column + WW]
+                    argmax = np.argmax(window)
+                    dx_i, dx_j = np.unravel_index(argmax, (HH, WW))
+
+                    dx[n, c, row:row + HH, column:column + WW][dx_i, dx_j] = dout[n, c, i, j]
+
+                    column += stride
+                row += stride
     return dx
 
 
