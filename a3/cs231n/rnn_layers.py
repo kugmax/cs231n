@@ -463,8 +463,9 @@ def lstm_backward(dh, cache):
     db = np.zeros(shape=(H_4,))
     dx = np.zeros(x.shape)
 
-    dprev_h_t = 0
-    dprev_c_t = 0
+    dprev_h_t = np.zeros(shape=(N, H))
+    dprev_c_t = np.zeros(shape=(N, H))
+
     for t in reversed(range(T)):
         dprev_h_t = dprev_h_t + dh[:, t]
 
